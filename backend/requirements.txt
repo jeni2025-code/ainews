@@ -1,6 +1,8 @@
-fastapi
-uvicorn
-feedparser
+fastapi==0.109.2
+uvicorn==0.27.1
+feedparser==6.0.11
+apscheduler==3.10.4
 python-dotenv
 requests
 pydantic
+email-validator

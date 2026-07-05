@@ -4,8 +4,33 @@ from services.news_fetcher import fetch_latest_news
 from services.ai_processor import process_news_articles, get_trending_topics
 from collections import Counter
 import time
+import json
+from pydantic import BaseModel, EmailStr
+from contextlib import asynccontextmanager
+from apscheduler.schedulers.background import BackgroundScheduler
+from services.email_sender import send_daily_newsletter
 
-app = FastAPI(title="AI News API", version="2.0.0")
+# Setup APScheduler
+scheduler = BackgroundScheduler()
+
+def scheduled_newsletter():
+    try:
+        articles = get_cached_articles()
+        trending = get_trending_topics(articles, top_n=10)
+        send_daily_newsletter(articles, trending)
+    except Exception as e:
+        print(f"Failed to send scheduled newsletter: {e}")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Start scheduler on startup
+    scheduler.add_job(scheduled_newsletter, 'cron', hour=8, minute=0) # Runs daily at 8 AM
+    scheduler.start()
+    yield
+    # Shutdown on exit
+    scheduler.shutdown()
+
+app = FastAPI(title="AI News API", version="2.0.0", lifespan=lifespan)
 
 # Configure CORS - allow all origins for Vercel, HF Space, and local dev
 app.add_middleware(
@@ -117,6 +142,38 @@ async def get_stats():
             "sentiment_distribution": sentiment_dist,
             "source_distribution": source_dist,
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class SubscribeRequest(BaseModel):
+    email: EmailStr
+
+@app.post("/api/subscribe")
+async def subscribe_newsletter(req: SubscribeRequest):
+    """Subscribe to the daily email newsletter."""
+    try:
+        subscribers = []
+        try:
+            with open("subscribers.json", "r") as f:
+                subscribers = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass
+        
+        if req.email not in subscribers:
+            subscribers.append(req.email)
+            with open("subscribers.json", "w") as f:
+                json.dump(subscribers, f)
+                
+        return {"status": "success", "message": "Successfully subscribed!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/test-email")
+async def test_email():
+    """Immediately trigger the newsletter email for testing."""
+    try:
+        scheduled_newsletter()
+        return {"status": "success", "message": "Email job triggered in background"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

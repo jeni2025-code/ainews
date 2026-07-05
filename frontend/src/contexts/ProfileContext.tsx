@@ -6,6 +6,8 @@ export interface UserProfile {
   avatar: string; // emoji avatar
   selectedCategories: string[];
   notificationsEnabled: boolean;
+  email: string;
+  isSubscribed: boolean;
 }
 
 const DEFAULT_PROFILE: UserProfile = {
@@ -13,6 +15,8 @@ const DEFAULT_PROFILE: UserProfile = {
   avatar: "🧑",
   selectedCategories: [],
   notificationsEnabled: true,
+  email: "",
+  isSubscribed: false,
 };
 
 const AVATARS = ["🧑", "👩", "🧔", "👨‍💻", "👩‍💻", "🦊", "🐼", "🤖", "🦄", "🐉"];
