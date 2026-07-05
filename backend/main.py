@@ -5,15 +5,11 @@ from services.ai_processor import process_news_articles
 
 app = FastAPI(title="AI News API")
 
-# Configure CORS for the Next.js frontend
+# Configure CORS - allow all origins for Vercel, HF Space, and local dev
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://jeni2025-ainews.hf.space",
-        "*"
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
