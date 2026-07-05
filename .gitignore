@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
+hf_space/
+hf_upload.py
+hf_payload.json
+changes.diff
